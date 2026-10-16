@@ -5,6 +5,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#123b35">
+<link rel="manifest" href="manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
 <title>Otel Ağaoğlu Housekeeping</title>
 <style>
 :root {
@@ -867,6 +869,17 @@ function startRealtimeSync() {
     });
 }
 
+</script>
+
+<script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./service-worker.js")
+      .catch((error) => {
+        console.error("Service Worker kaydedilemedi:", error);
+      });
+  });
+}
 </script>
 </body>
 </html>

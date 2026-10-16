@@ -400,14 +400,18 @@ function renderRooms() {
 function changeRoomStatus(number) {
   const room = data.rooms.find(r => r.number === number);
   if (!room) return;
-  const choices = Object.entries(STATUS).map(([key, val]) => `${key} = ${val.label}`).join("\n");
-  const answer = prompt("Oda durumunu seçin:\n" + choices + "\n\nDurum kodunu yazın:", room.status);
+  const choices = Object.values(STATUS).map(val => val.label).join("\n");
+  const currentLabel = STATUS[room.status]?.label || "Temizlik bekliyor";
+  const answer = prompt("Oda durumunu Türkçe seçeneklerden biriyle yazın:\n" + choices, currentLabel);
   if (answer === null) return;
-  if (!STATUS[answer.trim()]) {
-    alert("Geçersiz durum kodu. Örnek: dirty, progress, inspect, clean, maintenance");
+  const selected = Object.entries(STATUS).find(([key, val]) =>
+    val.label.localeCompare(answer.trim(), "tr", { sensitivity: "accent" }) === 0
+  );
+  if (!selected) {
+    alert("Geçersiz durum. Lütfen listelenen Türkçe seçeneklerden birini yazın.");
     return;
   }
-  room.status = answer.trim();
+  room.status = selected[0];
   room.updatedAt = new Date().toISOString();
   saveData();
 }

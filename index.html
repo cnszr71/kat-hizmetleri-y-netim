@@ -281,3 +281,444 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:20px;margin-t
   </section>
 
   <!-- 5. GÜNLÜK RAPOR -->
+  <section id="view-reports" class="view">
+    <div class="panel">
+      <div class="panel-head"><div><h2>Günlük Operasyon Raporu</h2><p>Müdür için anlık oda durumu ve görevli özeti.</p></div></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Oda No</th><th>Tip</th><th>Statü</th><th>Görev Tanımı</th><th>Atanan Personel</th><th>Son Güncelleme</th></tr></thead>
+          <tbody id="reportRows"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <footer>Otel Ağaoğlu Housekeeping Yönetim Sistemi · Veriler tarayıcınızda ve bulutta güvenle saklanır.</footer>
+</main>
+
+<script>
+"use strict";
+
+const STORAGE_KEY = "agaoglu-housekeeping-v4";
+
+function roomType(number) {
+  const n = String(number).trim();
+  if (n === "113") return "King Suite";
+  if (n.endsWith("6")) return "Suit";
+  return "Standart";
+}
+
+const ROOM_NUMBERS = [
+  "101","102","103","104","105","106","113",
+  "201","202","203","204","205","206","211","212","213",
+  "301","302","303","304","305","306","311","312","313",
+  "401","402","403","404","405","406","411","412","413"
+];
+
+const INITIAL_ROOMS = ROOM_NUMBERS.map(number => ({
+  number,
+  type: roomType(number),
+  status: "dirty", 
+  taskDesc: "Günlük Standart Temizlik",
+  staff: "",
+  startTime: null,
+  finishTime: null,
+  checklist: {},
+  updatedAt: new Date().toISOString()
+}));
+
+let data = loadData();
+
+function loadData() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && Array.isArray(parsed.rooms)) {
+        parsed.issues = Array.isArray(parsed.issues) ? parsed.issues : [];
+        return parsed;
+      }
+    }
+  } catch (e) {
+    console.error("Kayıt okunamadı:", e);
+  }
+  return { rooms: INITIAL_ROOMS, issues: [] };
+}
+
+function saveData() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  renderAll();
+}
+
+// SESLİ UYARI (BEEP) SİSTEMİ
+function playAlarmSound() {
+  try {
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+    gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+    osc.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.6);
+  } catch(e) {
+    console.log("Ses çalınamadı:", e);
+  }
+}
+
+function triggerAlarm(message) {
+  const banner = document.getElementById("alarmBanner");
+  document.getElementById("alarmText").textContent = `🚨 ${message}`;
+  banner.style.display = "flex";
+  playAlarmSound();
+}
+
+function dismissAlarm() {
+  document.getElementById("alarmBanner").style.display = "none";
+}
+
+const STATUS = {
+  dirty: { label: "Kirli", badge: "badge-dirty", cls: "s-dirty" },
+  progress: { label: "Temizlik Yapılıyor", badge: "badge-progress", cls: "s-progress" },
+  inspect: { label: "Kontrol Bekliyor", badge: "badge-inspect", cls: "s-inspect" },
+  clean: { label: "Satışa Hazır", badge: "badge-clean", cls: "s-clean" },
+  maintenance: { label: "Arızalı / Kapalı", badge: "badge-maintenance", cls: "s-maintenance" }
+};
+
+function escapeHTML(value) {
+  return String(value ?? "").replace(/[&<>"']/g, c => ({
+    "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;"
+  }[c]));
+}
+
+function dateText(value) {
+  if (!value) return "—";
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? "—" : d.toLocaleTimeString("tr-TR", {hour:"2-digit", minute:"2-digit"}) + " (" + d.toLocaleDateString("tr-TR") + ")";
+}
+
+function roomFloor(number) {
+  const match = String(number).match(/^(\d)/);
+  return match ? match[1] : "other";
+}
+
+function roomOptions(selected = "") {
+  const rooms = [...data.rooms].sort((a,b) => a.number.localeCompare(b.number, "tr", {numeric:true}));
+  return `<option value="">Oda seçin</option>` +
+    rooms.map(r => `<option value="${escapeHTML(r.number)}" ${r.number===selected?"selected":""}>${escapeHTML(r.number)} · ${escapeHTML(r.type)} (${STATUS[r.status].label})</option>`).join("");
+}
+
+function renderStats() {
+  document.getElementById("totRooms").textContent = data.rooms.length;
+  document.getElementById("stDirty").textContent = data.rooms.filter(r => r.status === "dirty").length;
+  document.getElementById("stProgress").textContent = data.rooms.filter(r => r.status === "progress").length;
+  document.getElementById("stInspect").textContent = data.rooms.filter(r => r.status === "inspect").length;
+  document.getElementById("stClean").textContent = data.rooms.filter(r => r.status === "clean").length;
+}
+
+// 1. MÜDÜR EKRANI (ESTETİK KARTLAR & SEÇEREK DURUM DEĞİŞTİRME)
+function renderRooms() {
+  const search = document.getElementById("roomSearch").value.trim().toLocaleLowerCase("tr");
+  const floor = document.getElementById("floorFilter").value;
+  const status = document.getElementById("statusFilter").value;
+
+  const rooms = [...data.rooms]
+    .sort((a,b) => a.number.localeCompare(b.number, "tr", {numeric:true}))
+    .filter(r => {
+      const matchesSearch = !search || r.number.toLocaleLowerCase("tr").includes(search) || r.staff.toLocaleLowerCase("tr").includes(search);
+      const matchesFloor = !floor || roomFloor(r.number) === floor;
+      const matchesStatus = !status || r.status === status;
+      return matchesSearch && matchesFloor && matchesStatus;
+    });
+
+  document.getElementById("roomGrid").innerHTML = rooms.length ? rooms.map(r => {
+    const s = STATUS[r.status] || STATUS.dirty;
+    
+    // Açılır durum seçenekleri HTML'i
+    const statusOptionsHtml = Object.entries(STATUS).map(([key, val]) => 
+      `<option value="${key}" ${r.status === key ? 'selected' : ''}>${val.label}</option>`
+    ).join("");
+
+    return `<article class="room-card ${s.cls}">
+      <div>
+        <div class="room-top">
+          <div>
+            <div class="room-number">${escapeHTML(r.number)}</div>
+            <span class="room-type">${escapeHTML(r.type)}</span>
+          </div>
+          <span class="status-badge ${s.badge}">${s.label}</span>
+        </div>
+        
+        <div class="room-content-box">
+          <div class="room-task-text">📋 ${escapeHTML(r.taskDesc || "Görev yok")}</div>
+          <div class="room-staff-text">👤 ${r.staff ? escapeHTML(r.staff) : "Personel atanmadı"}</div>
+        </div>
+      </div>
+
+      <div class="room-footer-actions">
+        <select class="status-select" onchange="updateRoomStatusFromCard('${escapeHTML(r.number)}', this.value)">
+          ${statusOptionsHtml}
+        </select>
+        <div style="display:flex; gap:6px;">
+          ${r.status === 'inspect' ? `<button class="btn-green" style="flex:1; padding:7px; font-size:11px;" onclick="managerApprove('${escapeHTML(r.number)}')">✓ Onayla (Satışa Aç)</button>` : ``}
+          <button class="btn-outline" style="flex:1; padding:7px; font-size:11px;" onclick="assignStaff('${escapeHTML(r.number)}')">Personel Ata</button>
+        </div>
+      </div>
+    </article>`;
+  }).join("") : `<div class="empty">Filtrelere uygun oda bulunamadı.</div>`;
+}
+
+function updateRoomStatusFromCard(number, newStatus) {
+  const room = data.rooms.find(r => r.number === number);
+  if (!room) return;
+  room.status = newStatus;
+  room.updatedAt = new Date().toISOString();
+  saveData();
+}
+
+function managerApprove(number) {
+  const room = data.rooms.find(r => r.number === number);
+  if (!room) return;
+  room.status = "clean";
+  room.updatedAt = new Date().toISOString();
+  saveData();
+}
+
+function assignStaff(number) {
+  const room = data.rooms.find(r => r.number === number);
+  if (!room) return;
+  const staff = prompt(`${number} numaralı oda için personel adı:`, room.staff);
+  if (staff === null) return;
+  room.staff = staff.trim();
+  room.updatedAt = new Date().toISOString();
+  saveData();
+}
+
+function addRoom() {
+  const number = prompt("Yeni oda numarası:");
+  if (!number) return;
+  const cleaned = number.trim();
+  if (data.rooms.some(r => r.number === cleaned)) { alert("Bu oda zaten var!"); return; }
+  data.rooms.push({
+    number: cleaned, type: roomType(cleaned), status: "dirty",
+    taskDesc: "Günlük Temizlik", staff: "", updatedAt: new Date().toISOString()
+  });
+  saveData();
+}
+
+// 2. RESEPSİYON SABAH GİRİŞİ
+function renderReception() {
+  const tbody = document.getElementById("receptionRows");
+  tbody.innerHTML = data.rooms.map(r => `
+    <tr>
+      <td><strong>${escapeHTML(r.number)}</strong></td>
+      <td>${escapeHTML(r.type)}</td>
+      <td><span class="status-badge ${STATUS[r.status].badge}">${STATUS[r.status].label}</span></td>
+      <td><input type="text" id="rec-task-${r.number}" value="${escapeHTML(r.taskDesc)}" style="font-size:12px; padding:8px;" placeholder="Görev talimatı..."></td>
+      <td><input type="text" id="rec-staff-${r.number}" value="${escapeHTML(r.staff)}" style="font-size:12px; padding:8px;" placeholder="Personel"></td>
+      <td>
+        <button class="btn-green" style="padding:8px 12px; font-size:11px;" onclick="saveReceptionTask('${r.number}')">Kaydet</button>
+      </td>
+    </tr>
+  `).join("");
+}
+
+function saveReceptionTask(number) {
+  const room = data.rooms.find(r => r.number === number);
+  if (!room) return;
+  room.taskDesc = document.getElementById(`rec-task-${number}`).value.trim() || "Günlük Temizlik";
+  room.staff = document.getElementById(`rec-staff-${number}`).value.trim();
+  room.status = "dirty";
+  room.updatedAt = new Date().toISOString();
+  saveData();
+  alert(`${number} nolu oda görevi güncellendi.`);
+  renderReception();
+}
+
+// 3. KAT GÖREVLİSİ EKRANI
+function renderStaffPanel() {
+  const select = document.getElementById("staffRoomSelect");
+  const currentVal = select.value;
+  select.innerHTML = roomOptions(currentVal);
+  if (currentVal) loadRoomTaskDetails();
+}
+
+function loadRoomTaskDetails() {
+  const roomNo = document.getElementById("staffRoomSelect").value;
+  const panel = document.getElementById("staffTaskPanel");
+  if (!roomNo) { panel.style.display = "none"; return; }
+  panel.style.display = "block";
+  const room = data.rooms.find(r => r.number === roomNo);
+  if (!room) return;
+
+  document.getElementById("selectedRoomTitle").textContent = `${room.number} Nolu Oda (${room.type})`;
+  document.getElementById("staffTaskDesc").textContent = `Talimat: ${room.taskDesc} | Statü: ${STATUS[room.status].label}`;
+  document.getElementById("staffTimeInfo").textContent = `Başlangıç: ${dateText(room.startTime)} | Bitiş: ${dateText(room.finishTime)}`;
+  
+  const boxes = document.querySelectorAll(".chk-item");
+  boxes.forEach(box => {
+    box.checked = room.checklist && room.checklist[box.value] === true;
+  });
+}
+
+function startCleaning() {
+  const roomNo = document.getElementById("staffRoomSelect").value;
+  const staffName = document.getElementById("activeStaffName").value.trim();
+  if (!roomNo) return alert("Oda seçin.");
+  if (!staffName) return alert("Personel adınızı yazın.");
+
+  const room = data.rooms.find(r => r.number === roomNo);
+  if (!room) return;
+
+  room.staff = staffName;
+  room.status = "progress";
+  room.startTime = new Date().toISOString();
+  room.updatedAt = new Date().toISOString();
+  saveData();
+  loadRoomTaskDetails();
+}
+
+function finishCleaning() {
+  const roomNo = document.getElementById("staffRoomSelect").value;
+  if (!roomNo) return;
+  const room = data.rooms.find(r => r.number === roomNo);
+  if (!room) return;
+
+  room.checklist = {};
+  document.querySelectorAll(".chk-item").forEach(box => {
+    room.checklist[box.value] = box.checked;
+  });
+
+  room.status = "inspect"; 
+  room.finishTime = new Date().toISOString();
+  room.updatedAt = new Date().toISOString();
+  saveData();
+  loadRoomTaskDetails();
+  alert(`${roomNo} nolu oda temizliği tamamlandı, müdür onayına gönderildi.`);
+}
+
+function reportIssueFromStaff(priority) {
+  const roomNo = document.getElementById("staffRoomSelect").value;
+  const note = document.getElementById("staffNoteInput").value.trim();
+  const staffName = document.getElementById("activeStaffName").value.trim() || "Kat Personeli";
+  if (!roomNo || !note) return alert("Oda seçip açıklama yazın.");
+
+  data.issues.unshift({
+    id: Date.now().toString(36),
+    room: roomNo,
+    priority: priority,
+    type: priority === "Acil" ? "🚨 ACİL ARIZA" : "Normal Bildirim",
+    description: note,
+    reporter: staffName,
+    status: "open",
+    createdAt: new Date().toISOString()
+  });
+
+  if (priority === "Acil") {
+    const room = data.rooms.find(r => r.number === roomNo);
+    if (room) room.status = "maintenance";
+    triggerAlarm(`${roomNo} Nolu Odadan Acil Arıza Bildirildi!`);
+  }
+
+  document.getElementById("staffNoteInput").value = "";
+  saveData();
+  renderIssues();
+  alert("Bildirim gönderildi.");
+}
+
+// 4. ARIZA BİLDİRİMLERİ EKRANI
+function renderIssues() {
+  const tbody = document.getElementById("issueRows");
+  tbody.innerHTML = data.issues.length ? data.issues.map(i => `
+    <tr style="${i.priority === 'Acil' ? 'background:#fff5f5;' : ''}">
+      <td>${dateText(i.createdAt)}</td>
+      <td><strong>${escapeHTML(i.room)}</strong></td>
+      <td><span style="font-weight:bold; color:${i.priority === 'Acil' ? '#a72e2e' : 'inherit'}">${escapeHTML(i.priority || 'Normal')}</span></td>
+      <td>${escapeHTML(i.description)}</td>
+      <td>${escapeHTML(i.reporter)}</td>
+      <td>
+        ${i.status === "open" ? `<button class="btn-green" onclick="resolveIssue('${i.id}')">Çözüldü İşaretle</button>` : `<span style="color:var(--muted)">Çözüldü</span>`}
+      </td>
+    </tr>
+  `).join("") : `<tr><td colspan="6" class="empty">Açık arıza bulunmuyor.</td></tr>`;
+}
+
+function resolveIssue(id) {
+  const issue = data.issues.find(i => i.id === id);
+  if (issue) {
+    issue.status = "resolved";
+    saveData();
+  }
+}
+
+// 5. GÜNLÜK RAPOR
+function renderReports() {
+  const tbody = document.getElementById("reportRows");
+  tbody.innerHTML = data.rooms.map(r => `
+    <tr>
+      <td><strong>${escapeHTML(r.number)}</strong></td>
+      <td>${escapeHTML(r.type)}</td>
+      <td><span class="status-badge ${STATUS[r.status].badge}">${STATUS[r.status].label}</span></td>
+      <td>${escapeHTML(r.taskDesc)}</td>
+      <td>${escapeHTML(r.staff || "Atanmadı")}</td>
+      <td>${dateText(r.updatedAt)}</td>
+    </tr>
+  `).join("");
+}
+
+// TAB GEÇİŞLERİ
+document.querySelectorAll(".tab").forEach(tab => {
+  tab.addEventListener("click", () => {
+    document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+    document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
+    tab.classList.add("active");
+    document.getElementById("view-" + tab.dataset.view).classList.add("active");
+    
+    if (tab.dataset.view === "staff") renderStaffPanel();
+    if (tab.dataset.view === "reception") renderReception();
+    if (tab.dataset.view === "reports") renderReports();
+    if (tab.dataset.view === "issues") renderIssues();
+  });
+});
+
+function renderAll() {
+  renderStats();
+  renderRooms();
+  renderIssues();
+  if (document.getElementById("view-staff").classList.contains("active")) renderStaffPanel();
+  if (document.getElementById("view-reception").classList.contains("active")) renderReception();
+  if (document.getElementById("view-reports").classList.contains("active")) renderReports();
+}
+
+function exportCSV() {
+  const rows = [
+    ["Oda No", "Oda Tipi", "Durum", "Görev Tanımı", "Görevli", "Son Güncelleme"],
+    ...data.rooms.map(r => [r.number, r.type, STATUS[r.status].label, r.taskDesc, r.staff, dateText(r.updatedAt)])
+  ];
+  const csv = "\uFEFF" + rows.map(r => r.map(c => `"${c}"`).join(";")).join("\r\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "agaoglu-housekeeping-rapor.csv";
+  a.click();
+  a.remove();
+}
+
+function backupData() {
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "agaoglu-yedek-" + new Date().toISOString().slice(0,10) + ".json";
+  a.click();
+  a.remove();
+}
+
+// Başlatıcı
+renderAll();
+</script>
+</body>
+</html>

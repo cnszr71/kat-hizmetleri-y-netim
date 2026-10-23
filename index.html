@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="tr">
 <head>
@@ -98,7 +97,7 @@ footer{text-align:center;color:var(--muted);font-size:11px;padding:10px}
 </head>
 <body>
 
-<div id="loginScreen" style="display:flex; position:fixed; inset:0; z-index:9999; background:#f3f6f5; align-items:center; justify-content:center; padding:20px;">
+<div id="loginScreen" style="display:none; position:fixed; inset:0; z-index:9999; background:#f3f6f5; align-items:center; justify-content:center; padding:20px;">
   <form id="loginForm" style="background:white; padding:30px; border-radius:16px; width:100%; max-width:380px; box-shadow:0 4px 24px #173e3215;">
     <h2 style="color:#123b35; margin-top:0;">🏨 Otel Ağaoğlu</h2>
     <p style="color:#71817b;">Kat Hizmetleri Yönetim Sistemi</p>
@@ -228,13 +227,23 @@ footer{text-align:center;color:var(--muted);font-size:11px;padding:10px}
       <div class="table-wrap"><table><thead><tr><th>Tarih</th><th>Oda</th><th>Kontrol eden</th><th>Sonuç</th><th>Puan</th><th>Not</th></tr></thead><tbody id="inspectionRows"></tbody></table></div>
     </div>
   </section>
-  <footer>Otel Ağaoğlu Housekeeping · Veriler bu tarayıcıda saklanır.</footer>
+  <footer>Otel Ağaoğlu Housekeeping · Veriler tarayıcınızda ve bulutta saklanır.</footer>
 </main>
+
+<!-- Supabase CDN -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
 "use strict";
 
 const STORAGE_KEY = "cnszr-housekeeping-v1";
+
+// Supabase İstemci Yapılandırması (Gerekirse bilgilerinizi buraya girebilirsiniz)
+const SUPABASE_URL = "YOUR_SUPABASE_URL";
+const SUPABASE_KEY = "YOUR_SUPABASE_ANON_KEY";
+const supabaseClient = (window.supabase && SUPABASE_URL !== "YOUR_SUPABASE_URL") 
+  ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) 
+  : { auth: { getSession: async () => ({ data: { session: null } }) } };
 
 function roomType(number) {
   const n = String(number).trim();
@@ -287,30 +296,28 @@ function loadData() {
   return {rooms: INITIAL_ROOMS, tasks: [], issues: [], inspections: []};
 }
 
-
 async function saveData() {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
 
-    const { data: sessionData } = await supabaseClient.auth.getSession();
+    if (supabaseClient.auth && typeof supabaseClient.auth.getSession === "function") {
+      const { data: sessionData } = await supabaseClient.auth.getSession();
+      if (sessionData && sessionData.session) {
+        const { error } = await supabaseClient
+          .from('housekeeping_state')
+          .upsert({
+            id: 1,
+            payload: data,
+            updated_at: new Date().toISOString()
+          });
 
-    if (sessionData.session) {
-      const { error } = await supabaseClient
-        .from('housekeeping_state')
-        .upsert({
-          id: 1,
-          payload: data,
-          updated_at: new Date().toISOString()
-        });
-
-      if (error) {
-        console.error('Supabase kayıt hatası:', error.message);
-        alert('Ortak veritabanına kayıt yapılamadı: ' + error.message);
+        if (error) {
+          console.error('Supabase kayıt hatası:', error.message);
+        }
       }
     }
   } catch (e) {
     console.error('Kayıt hatası:', e);
-    alert('Veriler kaydedilemedi. Hata ayrıntısı için Console bölümünü kontrol edin.');
   }
 
   renderAll();
@@ -683,207 +690,8 @@ function backupData() {
   URL.revokeObjectURL(url);
 }
 
+// Uygulamayı başlat
 renderAll();
-</script>
-
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-"use strict";
-
-const SUPABASE_URL = "https://frztlwjcmooijrukmtbn.supabase.co";
-const SUPABASE_KEY = "sb_publishable_TICCsUGCqJvhe2Ooj8LtAQ_O717LETM";
-
-const supabaseClient = window.supabase.createClient(
-  SUPABASE_URL,
-  SUPABASE_KEY
-);
-
-const loginForm = document.getElementById("loginForm");
-const loginScreen = document.getElementById("loginScreen");
-const loginMessage = document.getElementById("loginMessage");
-
-function normalizeSharedData(payload) {
-  if (!payload || !Array.isArray(payload.rooms)) {
-    throw new Error("Ortak kayıt biçimi geçersiz.");
-  }
-
-  return {
-    rooms: payload.rooms.map(r => ({
-      number: String(r.number || ""),
-      type: roomType(r.number),
-      status: ["dirty", "progress", "inspect", "clean", "maintenance"]
-        .includes(r.status) ? r.status : "dirty",
-      staff: r.staff || "",
-      task: r.task || "",
-      updatedAt: r.updatedAt || new Date().toISOString()
-    })),
-    tasks: Array.isArray(payload.tasks) ? payload.tasks : [],
-    issues: Array.isArray(payload.issues) ? payload.issues : [],
-    inspections: Array.isArray(payload.inspections)
-      ? payload.inspections : []
-  };
-}
-
-async function loadSharedData() {
-  const { data: savedState, error } = await supabaseClient
-    .from("housekeeping_state")
-    .select("payload")
-    .eq("id", 1)
-    .maybeSingle();
-
-  if (error) throw error;
-
-  if (savedState && savedState.payload) {
-    data = normalizeSharedData(savedState.payload);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-    console.log("Ortak kayıt yüklendi.");
-  } else {
-    // İlk kurulum: mevcut tarayıcıdaki verileri ortak kayda aktar.
-    data = normalizeSharedData(data);
-
-    const { error: saveError } = await supabaseClient
-      .from("housekeeping_state")
-      .upsert({
-        id: 1,
-        payload: data,
-        updated_at: new Date().toISOString()
-      });
-
-    if (saveError) throw saveError;
-
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-    console.log("İlk ortak kayıt oluşturuldu.");
-  }
-
-  renderAll();
-}
-
-
-async function openAppAfterLogin() {
-  await loadSharedData();
-  startRealtimeSync();
-  loginScreen.style.display = "none";
-  loginMessage.textContent = "";
-}
-
-
-loginForm.addEventListener("submit", async event => {
-  event.preventDefault();
-
-  const email = document.getElementById("loginEmail").value.trim();
-  const password = document.getElementById("loginPassword").value;
-
-  loginMessage.style.color = "#71817b";
-  loginMessage.textContent = "Giriş yapılıyor...";
-
-  try {
-    const { data: authData, error } =
-      await supabaseClient.auth.signInWithPassword({
-        email,
-        password
-      });
-
-    if (error) throw error;
-
-    console.log("Giriş başarılı:", authData.user.email);
-    await openAppAfterLogin();
-  } catch (error) {
-    console.error("Giriş veya veri yükleme hatası:", error);
-
-    loginMessage.style.color = "#b42318";
-    loginMessage.textContent =
-      "İşlem başarısız: " + (error.message || "Bilinmeyen hata");
-  }
-});
-
-// Daha önce giriş yapılmışsa oturumu yeniden kullan.
-(async function initializeApp() {
-  try {
-    const { data: sessionData, error } =
-      await supabaseClient.auth.getSession();
-
-    if (error) throw error;
-
-    if (sessionData.session) {
-      loginMessage.textContent = "Ortak veriler yükleniyor...";
-      await openAppAfterLogin();
-    } else {
-      loginScreen.style.display = "flex";
-    }
-  } catch (error) {
-    console.error("Başlangıç hatası:", error);
-    loginScreen.style.display = "flex";
-    loginMessage.style.color = "#b42318";
-    loginMessage.textContent =
-      "Veriler yüklenemedi. Sayfayı yenileyip tekrar deneyin.";
-  }
-})();
-
-console.log("Supabase bağlantı istemcisi hazır.");
-
-let realtimeChannel = null;
-let isApplyingRemoteData = false;
-
-function startRealtimeSync() {
-  if (realtimeChannel) {
-    supabaseClient.removeChannel(realtimeChannel);
-  }
-
-  realtimeChannel = supabaseClient
-    .channel("housekeeping-live-sync")
-    .on(
-      "postgres_changes",
-      {
-        event: "*",
-        schema: "public",
-        table: "housekeeping_state",
-        filter: "id=eq.1"
-      },
-      async () => {
-        // Kendi kaydettiğimiz veriyi tekrar yüklemeye gerek yok.
-        if (isApplyingRemoteData) return;
-
-        const { data: savedState, error } = await supabaseClient
-          .from("housekeeping_state")
-          .select("payload")
-          .eq("id", 1)
-          .maybeSingle();
-
-        if (error) {
-          console.error("Canlı veri alma hatası:", error.message);
-          return;
-        }
-
-        if (!savedState || !savedState.payload) return;
-
-        isApplyingRemoteData = true;
-
-        try {
-          data = normalizeSharedData(savedState.payload);
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-          renderAll();
-          console.log("Diğer cihazdan gelen değişiklik uygulandı.");
-        } finally {
-          isApplyingRemoteData = false;
-        }
-      }
-    )
-    .subscribe(status => {
-      console.log("Canlı senkronizasyon durumu:", status);
-    });
-}
-
-</script>
-
-<script>
-if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker.register("./service-worker.js")
-      .catch((error) => {
-        console.error("Service Worker kaydedilemedi:", error);
-      });
-  });
-}
 </script>
 </body>
 </html>

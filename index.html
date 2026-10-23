@@ -9,86 +9,121 @@
 <title>Otel Ağaoğlu Housekeeping Yönetim Sistemi</title>
 <style>
 :root {
-  --green:#123b35; --green2:#1d5a4f; --bg:#f3f6f5;
+  --green:#123b35; --green2:#1d5a4f; --bg:#f8faf9;
   --white:#fff; --text:#24332f; --muted:#71817b;
-  --border:#e1e9e5; --orange:#fff0d8; --red:#fde8e7;
-  --blue:#e8f1ff; --purple:#eee7ff; --shadow:0 4px 18px #173e3210;
+  --border:#e2ece8; --shadow:0 10px 30px rgba(18,59,53,0.06);
 }
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--text);font-family:Arial,Helvetica,sans-serif}
+body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,sans-serif}
 button,input,select,textarea{font:inherit}
 button{cursor:pointer}
-header{background:var(--green);color:#fff;padding:22px 24px}
+header{background:var(--green);color:#fff;padding:20px 24px;box-shadow:0 4px 20px rgba(0,0,0,0.1)}
 .header-inner{max-width:1400px;margin:auto;display:flex;align-items:center;justify-content:space-between;gap:16px}
-.brand{display:flex;align-items:center;gap:13px}
-.logo{width:46px;height:46px;border-radius:13px;background:#ffffff18;display:grid;place-items:center;font-size:24px}
-h1{font-size:21px;margin:0 0 5px}
+.brand{display:flex;align-items:center;gap:14px}
+.logo{width:48px;height:48px;border-radius:14px;background:rgba(255,255,255,0.12);display:grid;place-items:center;font-size:24px}
+h1{font-size:20px;margin:0 0 4px;font-weight:700;letter-spacing:-0.2px}
 .subtitle{font-size:12px;color:#c9d9d4}
 .header-actions{display:flex;gap:8px;flex-wrap:wrap}
-button{border:0;border-radius:9px;padding:10px 13px;font-weight:600}
+button{border:0;border-radius:10px;padding:10px 14px;font-weight:600;transition:all 0.2s ease}
+button:hover{opacity:0.9;transform:translateY(-1px)}
 .btn-light{background:#fff;color:var(--green)}
 .btn-green{background:var(--green2);color:#fff}
 .btn-outline{background:#fff;color:var(--text);border:1px solid var(--border)}
-.btn-danger{background:#fff0ef;color:#a72e2e}
+.btn-danger{background:#fde8e7;color:#a72e2e}
 main{max-width:1400px;margin:24px auto;padding:0 20px 40px}
-.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px}
-.tab{background:#fff;border:1px solid var(--border);color:var(--muted)}
-.tab.active{background:var(--green);color:#fff;border-color:var(--green)}
-.stats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin-bottom:22px}
-.stat{background:#fff;padding:16px;border-radius:14px;border:1px solid var(--border);box-shadow:var(--shadow)}
-.stat-label{color:var(--muted);font-size:11px;margin-bottom:8px;font-weight:700}
-.stat-value{font-size:24px;font-weight:700}
-.stat-note{font-size:10px;color:var(--muted);margin-top:5px}
-.panel{background:#fff;border:1px solid var(--border);border-radius:14px;padding:20px;box-shadow:var(--shadow);margin-bottom:18px}
-.panel-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:17px}
-.panel h2{font-size:17px;margin:0}
-.panel p{font-size:13px;color:var(--muted)}
-.filters{display:flex;gap:9px;flex-wrap:wrap}
-input,select,textarea{width:100%;padding:10px 11px;border:1px solid #d9e3de;border-radius:9px;background:#fff;color:var(--text);min-width:0}
-input:focus,select:focus,textarea:focus{outline:2px solid #a8cec1;border-color:var(--green2)}
-.filters input{max-width:240px}
-.filters select{width:auto;min-width:145px}
-.room-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
-.room-card{border:1px solid var(--border);border-radius:12px;padding:14px;min-width:0;background:#fff;display:flex;flex-direction:column;justify-content:space-between}
-.room-top{display:flex;align-items:flex-start;justify-content:space-between;gap:7px}
-.room-number{font-size:20px;font-weight:750;letter-spacing:.2px}
-.room-type{font-size:11px;color:var(--muted);margin-top:2px}
-.status{display:inline-block;border-radius:20px;padding:5px 9px;font-size:10px;font-weight:700;white-space:nowrap}
-.s-dirty{background:#fff0d8;color:#966018}
-.s-progress{background:#e8f1ff;color:#285ba6}
-.s-inspect{background:#eee7ff;color:#6743a4}
-.s-clean{background:#e0f5e9;color:#167247}
-.s-maintenance{background:#fde8e7;color:#a72e2e}
 
-.room-task{font-size:12px;margin:10px 0;color:var(--text);overflow-wrap:anywhere}
-.room-meta{font-size:11px;color:var(--muted);margin-bottom:10px}
-.room-actions{display:grid;grid-template-columns:1fr 1fr;gap:6px}
-.room-actions button{font-size:11px;padding:8px 4px}
-.small-btn{background:#f1f5f3;color:#315047}
-.empty{padding:35px;text-align:center;color:var(--muted)}
+/* ALARM BANNER */
+#alarmBanner {
+  display:none; background: linear-gradient(135deg, #a72e2e, #c53030); color: #fff; padding: 16px 22px;
+  border-radius: 14px; margin-bottom: 22px; font-weight: bold;
+  box-shadow: 0 6px 20px rgba(167,46,46,0.3);
+  justify-content: space-between; align-items: center;
+  animation: pulseAlarm 1.2s infinite;
+}
+@keyframes pulseAlarm {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.005); }
+  100% { transform: scale(1); }
+}
+
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:22px}
+.tab{background:#fff;border:1px solid var(--border);color:var(--muted);padding:11px 18px;border-radius:11px;font-weight:600;box-shadow:0 2px 6px rgba(0,0,0,0.02)}
+.tab.active{background:var(--green);color:#fff;border-color:var(--green);box-shadow:0 4px 12px rgba(18,59,53,0.2)}
+
+.stats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:14px;margin-bottom:24px}
+.stat{background:#fff;padding:18px;border-radius:16px;border:1px solid var(--border);box-shadow:var(--shadow)}
+.stat-label{color:var(--muted);font-size:11px;margin-bottom:8px;font-weight:700;letter-spacing:0.5px}
+.stat-value{font-size:26px;font-weight:800;letter-spacing:-0.5px}
+.stat-note{font-size:11px;color:var(--muted);margin-top:6px}
+
+.panel{background:#fff;border:1px solid var(--border);border-radius:16px;padding:24px;box-shadow:var(--shadow);margin-bottom:20px}
+.panel-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:20px}
+.panel h2{font-size:18px;margin:0;font-weight:700}
+.panel p{font-size:13px;color:var(--muted);margin:4px 0 0}
+
+.filters{display:flex;gap:10px;flex-wrap:wrap}
+input,select,textarea{width:100%;padding:11px 14px;border:1px solid var(--border);border-radius:11px;background:#fff;color:var(--text);font-size:13px}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--green2);box-shadow:0 0 0 3px rgba(29,90,79,0.1)}
+.filters input{max-width:250px}
+.filters select{width:auto;min-width:160px}
+
+/* ODA KARTLARI ESTETİK TASARIM */
+.room-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:16px}
+.room-card{
+  background:#fff; border:1px solid var(--border); border-radius:16px; padding:18px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.03); display:flex; flex-direction:column; justify-content:space-between;
+  transition:all 0.2s ease; position:relative; overflow:hidden;
+}
+.room-card:hover{transform:translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,0.07)}
+
+/* Kart Durum Kenar Çizgisi */
+.room-card::before{content:""; position:absolute; left:0; top:0; bottom:0; width:5px;}
+.room-card.s-dirty::before{background:#d97706;}
+.room-card.s-progress::before{background:#2563eb;}
+.room-card.s-inspect::before{background:#7c3aed;}
+.room-card.s-clean::before{background:#059669;}
+.room-card.s-maintenance::before{background:#dc2626;}
+
+.room-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:12px}
+.room-number{font-size:22px;font-weight:800;letter-spacing:-0.5px}
+.room-type{font-size:11px;color:var(--muted);background:#f1f5f3;padding:3px 8px;border-radius:6px;font-weight:600;display:inline-block;margin-top:4px}
+
+.status-badge{display:inline-block;border-radius:20px;padding:5px 10px;font-size:10px;font-weight:700;white-space:nowrap;text-transform:uppercase;letter-spacing:0.3px}
+.badge-dirty{background:#fef3c7;color:#92400e}
+.badge-progress{background:#eff6ff;color:#1e40af}
+.badge-inspect{background:#f5f3ff;color:#5b21b6}
+.badge-clean{background:#ecfdf5;color:#065f46}
+.badge-maintenance{background:#fef2f2;color:#991b1b}
+
+.room-content-box{background:#f8faf9; border-radius:10px; padding:10px 12px; margin-bottom:14px; border:1px solid #edf2ef;}
+.room-task-text{font-size:12px; color:var(--text); font-weight:600; margin-bottom:4px; display:flex; align-items:center; gap:5px;}
+.room-staff-text{font-size:11px; color:var(--muted); display:flex; align-items:center; gap:5px;}
+
+.room-footer-actions{display:flex; flex-direction:column; gap:8px;}
+.status-select{font-size:11px; padding:8px 10px; border-radius:8px; font-weight:600; background:#fff; border:1px solid var(--border); cursor:pointer;}
+
+.empty{padding:40px;text-align:center;color:var(--muted);grid-column:1/-1;font-size:14px}
 .view{display:none}.view.active{display:block}
-.form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+
+.form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
 .field label{display:block;font-size:12px;font-weight:700;margin-bottom:6px}
 .field.full{grid-column:1/-1}
-.form-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:15px}
+
 .table-wrap{overflow-x:auto}
 table{width:100%;border-collapse:collapse;font-size:13px}
-th,td{text-align:left;padding:12px 10px;border-bottom:1px solid var(--border);vertical-align:top}
-th{font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);background:#f8faf9}
+th,td{text-align:left;padding:14px 12px;border-bottom:1px solid var(--border);vertical-align:middle}
+th{font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:var(--muted);background:#f8faf9;font-weight:700}
 td{overflow-wrap:anywhere}
-.checklist-box{background:#f8faf9;border:1px solid var(--border);padding:12px;border-radius:8px;margin:8px 0}
-.checklist-box label{display:flex;align-items:center;gap:8px;font-size:12px;margin-bottom:6px;cursor:pointer}
-.checklist-box input[type="checkbox"]{width:16px;height:16px;accent-color:var(--green)}
-footer{text-align:center;color:var(--muted);font-size:11px;padding:15px}
-@media(max-width:1100px){.room-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.stats{grid-template-columns:repeat(3,minmax(0,1fr))}}
-@media(max-width:700px){
- header{padding:17px 14px}.header-inner{align-items:flex-start;flex-direction:column}
- main{padding:0 12px 28px;margin-top:16px}
- .room-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
- .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
- .room-card{padding:11px}
-}
-@media(max-width:400px){.room-grid{grid-template-columns:1fr}.stats{grid-template-columns:1fr}}
+
+.checklist-box{background:#f8faf9;border:1px solid var(--border);padding:16px;border-radius:12px;margin:12px 0}
+.checklist-box label{display:flex;align-items:center;gap:10px;font-size:13px;margin-bottom:8px;cursor:pointer;font-weight:500}
+.checklist-box input[type="checkbox"]{width:18px;height:18px;accent-color:var(--green)}
+
+footer{text-align:center;color:var(--muted);font-size:12px;padding:20px;margin-top:20px}
+
+@media(max-width:1200px){.room-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.stats{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:800px){.room-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:500px){.room-grid{grid-template-columns:1fr}.stats{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -110,27 +145,34 @@ footer{text-align:center;color:var(--muted);font-size:11px;padding:15px}
 </header>
 
 <main>
+  <!-- ACİL ALARM BANNERI -->
+  <div id="alarmBanner">
+    <span id="alarmText">🚨 ACİL ARIZA BİLDİRİMİ VAR!</span>
+    <button class="btn-light" onclick="dismissAlarm()" style="padding:6px 12px; font-size:11px;">Alarmı Sustur</button>
+  </div>
+
   <nav class="tabs">
     <button class="tab active" data-view="rooms">🛏 Müdür / Genel Oda Durumu</button>
+    <button class="tab" data-view="reception">🛎 Resepsiyon Sabah Girişi</button>
     <button class="tab" data-view="staff">🧹 Kat Görevlisi Ekranı</button>
-    <button class="tab" data-view="issues">🔧 Arıza & Eksik Bildirimleri</button>
-    <button class="tab" data-view="reports">📊 Günlük İş Yükü & Rapor</button>
+    <button class="tab" data-view="issues">🔧 Arıza & Acil Bildirimler</button>
+    <button class="tab" data-view="reports">📊 Günlük İş Yükü</button>
   </nav>
 
   <!-- İSTATİSTİKLER -->
   <section class="stats">
     <div class="stat"><div class="stat-label">TOPLAM ODA</div><div class="stat-value" id="totRooms">34</div><div class="stat-note">Otel + Apart</div></div>
-    <div class="stat"><div class="stat-label">KİRLİ</div><div class="stat-value" id="stDirty" style="color:#966018">0</div><div class="stat-note">Temizlik bekliyor</div></div>
-    <div class="stat"><div class="stat-label">YAPILIYOR</div><div class="stat-value" id="stProgress" style="color:#285ba6">0</div><div class="stat-note">Temizlik sürecinde</div></div>
-    <div class="stat"><div class="stat-label">KONTROL BEKLİYOR</div><div class="stat-value" id="stInspect" style="color:#6743a4">0</div><div class="stat-note">Müdür onayı bekliyor</div></div>
-    <div class="stat"><div class="stat-label">SATIŞA HAZIR</div><div class="stat-value" id="stClean" style="color:#167247">0</div><div class="stat-note">Misafir alabilir</div></div>
+    <div class="stat"><div class="stat-label">KİRLİ</div><div class="stat-value" id="stDirty" style="color:#d97706">0</div><div class="stat-note">Temizlik bekliyor</div></div>
+    <div class="stat"><div class="stat-label">YAPILIYOR</div><div class="stat-value" id="stProgress" style="color:#2563eb">0</div><div class="stat-note">Temizlik sürecinde</div></div>
+    <div class="stat"><div class="stat-label">KONTROL BEKLİYOR</div><div class="stat-value" id="stInspect" style="color:#7c3aed">0</div><div class="stat-note">Müdür onayı bekliyor</div></div>
+    <div class="stat"><div class="stat-label">SATIŞA HAZIR</div><div class="stat-value" id="stClean" style="color:#059669">0</div><div class="stat-note">Misafir alabilir</div></div>
   </section>
 
   <!-- 1. MÜDÜR / GENEL ODA DURUMU EKRANI -->
   <section id="view-rooms" class="view active">
     <div class="panel">
       <div class="panel-head">
-        <div><h2>Oda Durum Matrisi</h2><p>Tüm odaların anlık housekeeping statülerini takip edin ve onay verin.</p></div>
+        <div><h2>Oda Durum Matrisi</h2><p>Odaların anlık durumlarını kartlar üzerinden doğrudan seçerek güncelleyin.</p></div>
         <button class="btn-green" onclick="addRoom()">＋ Yeni Oda Ekle</button>
       </div>
       <div class="filters">
@@ -153,11 +195,28 @@ footer{text-align:center;color:var(--muted);font-size:11px;padding:15px}
     <div id="roomGrid" class="room-grid"></div>
   </section>
 
-  <!-- 2. KAT GÖREVLİSİ EKRANI -->
+  <!-- 2. RESEPSİYON SABAH GİRİŞİ -->
+  <section id="view-reception" class="view">
+    <div class="panel">
+      <div class="panel-head">
+        <div><h2>Resepsiyon Sabah Oda Durumu & Görev Tanımlama</h2><p>Sabah odaların çıkış durumlarını belirleyin ve kat görevlisine görev atayın.</p></div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Oda No</th><th>Tip</th><th>Mevcut Statü</th><th>Görev Tanımı / Talimat</th><th>Görevli Personel</th><th>İşlem</th></tr>
+          </thead>
+          <tbody id="receptionRows"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. KAT GÖREVLİSİ EKRANI -->
   <section id="view-staff" class="view">
     <div class="panel">
       <div class="panel-head">
-        <div><h2>Kat Görevlisi Çalışma Paneli</h2><p>Size veya ekibinize atanmış odaları seçin, kontrol listesini tamamlayıp temizliği bitirin.</p></div>
+        <div><h2>Kat Görevlisi Çalışma Paneli</h2><p>Size atanmış odaları seçin, temizliği başlatıp checklist adımlarını tamamlayın.</p></div>
       </div>
       <div class="form-grid">
         <div class="field">
@@ -180,11 +239,12 @@ footer{text-align:center;color:var(--muted);font-size:11px;padding:15px}
         </div>
       </div>
       
-      <div class="room-meta" id="staffTimeInfo">Süre takibi yapılmadı</div>
+      <div class="room-meta" id="staffTaskDesc" style="font-weight:600; color:var(--green2); margin-bottom:8px; font-size:13px;"></div>
+      <div class="room-meta" id="staffTimeInfo" style="margin-bottom:12px;">Süre takibi yapılmadı</div>
 
       <div class="checklist-box">
         <strong>Oda Temizlik & Buklet Kontrol Listesi</strong>
-        <div style="margin-top:10px;">
+        <div style="margin-top:12px;">
           <label><input type="checkbox" class="chk-item" value="Yatak takımları değişti"> Yatak takımları ve çarşaflar yenilendi</label>
           <label><input type="checkbox" class="chk-item" value="Banyo ve duş dezenfekte edildi"> Banyo, lavabo ve duşakabin dezenfekte edildi</label>
           <label><input type="checkbox" class="chk-item" value="Havlular yenilendi"> Havlu setleri tamamlandı (El, banyo, ayak)</label>
@@ -194,409 +254,30 @@ footer{text-align:center;color:var(--muted);font-size:11px;padding:15px}
         </div>
       </div>
 
-      <div class="form-grid" style="margin-top:15px;">
+      <div class="form-grid" style="margin-top:16px;">
         <div class="field">
-          <label>Eksik Malzeme / Arıza Bildirimi Ekstra Notu</label>
-          <textarea id="staffNoteInput" rows="2" placeholder="Örn: 2 numaralı havlu eksik, lamba patlak..."></textarea>
+          <label>Eksik Malzeme / Acil Arıza Bildirimi</label>
+          <textarea id="staffNoteInput" rows="2" placeholder="Örn: Havlu eksik veya musluk akıtıyor..."></textarea>
         </div>
-        <div class="field" style="display:flex; align-items:flex-end;">
-          <button class="btn-danger" style="width:100%; height:42px;" onclick="reportIssueFromStaff()">Bildirim Gönder / Arıza Aç</button>
+        <div class="field" style="display:flex; align-items:flex-end; gap:10px;">
+          <button class="btn-outline" style="width:50%; height:44px;" onclick="reportIssueFromStaff('Normal')">Normal Bildirim</button>
+          <button class="btn-danger" style="width:50%; height:44px;" onclick="reportIssueFromStaff('Acil')">🚨 ACİL ARIZA BİLDİR</button>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- 3. ARIZA VE EKSİK BİLDİRİMLERİ -->
+  <!-- 4. ARIZA BİLDİRİMLERİ -->
   <section id="view-issues" class="view">
     <div class="panel">
-      <div class="panel-head"><div><h2>Teknik Arıza ve Malzeme Bildirimleri</h2><p>Odalar ve ortak alanlardaki aksaklıkların takibi.</p></div></div>
+      <div class="panel-head"><div><h2>Teknik Arıza ve Acil Bildirim Masası</h2><p>Tüm katlardan gelen acil arızalar ve sesli uyarı takibi.</p></div></div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Tarih</th><th>Oda / Alan</th><th>Bildirim Türü</th><th>Açıklama</th><th>Bildiren</th><th>Durum / İşlem</th></tr></thead>
+          <thead><tr><th>Tarih</th><th>Oda / Alan</th><th>Öncelik</th><th>Açıklama</th><th>Bildiren</th><th>Durum / İşlem</th></tr></thead>
           <tbody id="issueRows"></tbody>
         </table>
       </div>
     </div>
   </section>
 
-  <!-- 4. GÜNLÜK TAMAMLANMA RAPORU & İŞ YÜKÜ -->
-  <section id="view-reports" class="view">
-    <div class="panel">
-      <div class="panel-head"><div><h2>Günlük Operasyon ve Tamamlanma Raporu</h2><p>Müdür için anlık performans ve oda hazırlık tablosu.</p></div></div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Oda No</th><th>Tip</th><th>Mevcut Statü</th><th>Atanan Personel</th><th>Son Güncelleme</th><th>Yönetici İşlemi</th></tr></thead>
-          <tbody id="reportRows"></tbody>
-        </table>
-      </div>
-    </div>
-  </section>
-
-  <footer>Otel Ağaoğlu Housekeeping Yönetim Sistemi · Veriler güvenle tarayıcınızda saklanır.</footer>
-</main>
-
-<script>
-"use strict";
-
-const STORAGE_KEY = "agaoglu-housekeeping-v2";
-
-function roomType(number) {
-  const n = String(number).trim();
-  if (n === "113") return "King Suite";
-  if (n.endsWith("6")) return "Suit";
-  return "Standart";
-}
-
-// 34 Odalı Otel ve Apart Listesi
-const ROOM_NUMBERS = [
-  "101","102","103","104","105","106","113",
-  "201","202","203","204","205","206","211","212","213",
-  "301","302","303","304","305","306","311","312","313",
-  "401","402","403","404","405","406","411","412","413"
-];
-
-const INITIAL_ROOMS = ROOM_NUMBERS.map(number => ({
-  number,
-  type: roomType(number),
-  status: "dirty", // dirty, progress, inspect, clean, maintenance
-  staff: "",
-  startTime: null,
-  finishTime: null,
-  checklist: {},
-  updatedAt: new Date().toISOString()
-}));
-
-let data = loadData();
-
-function loadData() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (parsed && Array.isArray(parsed.rooms)) {
-        parsed.issues = Array.isArray(parsed.issues) ? parsed.issues : [];
-        return parsed;
-      }
-    }
-  } catch (e) {
-    console.error("Kayıt okunamadı:", e);
-  }
-  return { rooms: INITIAL_ROOMS, issues: [] };
-}
-
-function saveData() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-  renderAll();
-}
-
-// 5 Asıl Oda Durumu Tanımı
-const STATUS = {
-  dirty: { label: "Kirli", cls: "s-dirty" },
-  progress: { label: "Temizlik yapılıyor", cls: "s-progress" },
-  inspect: { label: "Temiz, kontrol bekliyor", cls: "s-inspect" },
-  clean: { label: "Kontrol edildi, satışa hazır", cls: "s-clean" },
-  maintenance: { label: "Arızalı / kullanıma kapalı", cls: "s-maintenance" }
-};
-
-function escapeHTML(value) {
-  return String(value ?? "").replace(/[&<>"']/g, c => ({
-    "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;"
-  }[c]));
-}
-
-function dateText(value) {
-  if (!value) return "—";
-  const d = new Date(value);
-  return Number.isNaN(d.getTime()) ? "—" : d.toLocaleTimeString("tr-TR", {hour:"2-digit", minute:"2-digit"}) + " (" + d.toLocaleDateString("tr-TR") + ")";
-}
-
-function roomFloor(number) {
-  const match = String(number).match(/^(\d)/);
-  return match ? match[1] : "other";
-}
-
-function roomOptions(selected = "") {
-  const rooms = [...data.rooms].sort((a,b) => a.number.localeCompare(b.number, "tr", {numeric:true}));
-  return `<option value="">Oda seçin</option>` +
-    rooms.map(r => `<option value="${escapeHTML(r.number)}" ${r.number===selected?"selected":""}>${escapeHTML(r.number)} · ${escapeHTML(r.type)} (${STATUS[r.status].label})</option>`).join("");
-}
-
-// İSTATİSTİK GÜNCELLEME
-function renderStats() {
-  document.getElementById("totRooms").textContent = data.rooms.length;
-  document.getElementById("stDirty").textContent = data.rooms.filter(r => r.status === "dirty").length;
-  document.getElementById("stProgress").textContent = data.rooms.filter(r => r.status === "progress").length;
-  document.getElementById("stInspect").textContent = data.rooms.filter(r => r.status === "inspect").length;
-  document.getElementById("stClean").textContent = data.rooms.filter(r => r.status === "clean").length;
-}
-
-// 1. MÜDÜR EKRANI (ODA GRID)
-function renderRooms() {
-  const search = document.getElementById("roomSearch").value.trim().toLocaleLowerCase("tr");
-  const floor = document.getElementById("floorFilter").value;
-  const status = document.getElementById("statusFilter").value;
-
-  const rooms = [...data.rooms]
-    .sort((a,b) => a.number.localeCompare(b.number, "tr", {numeric:true}))
-    .filter(r => {
-      const matchesSearch = !search || r.number.toLocaleLowerCase("tr").includes(search) || r.staff.toLocaleLowerCase("tr").includes(search);
-      const matchesFloor = !floor || roomFloor(r.number) === floor;
-      const matchesStatus = !status || r.status === status;
-      return matchesSearch && matchesFloor && matchesStatus;
-    });
-
-  document.getElementById("roomGrid").innerHTML = rooms.length ? rooms.map(r => {
-    const s = STATUS[r.status] || STATUS.dirty;
-    return `<article class="room-card">
-      <div>
-        <div class="room-top">
-          <div><div class="room-number">${escapeHTML(r.number)}</div><div class="room-type">${escapeHTML(r.type)}</div></div>
-          <span class="status ${s.cls}">${s.label}</span>
-        </div>
-        <div class="room-task">👤 ${r.staff ? escapeHTML(r.staff) : "Atanmadı"}</div>
-        <div class="room-meta">🕒 Güncelleme: ${dateText(r.updatedAt)}</div>
-      </div>
-      <div class="room-actions">
-        ${r.status === 'inspect' ? `<button class="btn-green" onclick="managerApprove('${escapeHTML(r.number)}')">✓ Onayla (Satışa Aç)</button>` : ``}
-        <button class="small-btn" onclick="changeRoomStatusPrompt('${escapeHTML(r.number)}')">Durum Değiştir</button>
-        <button class="small-btn" onclick="assignStaff('${escapeHTML(r.number)}')">Personel Ata</button>
-      </div>
-    </article>`;
-  }).join("") : `<div class="empty">Filtrelere uygun oda bulunamadı.</div>`;
-}
-
-function managerApprove(number) {
-  const room = data.rooms.find(r => r.number === number);
-  if (!room) return;
-  room.status = "clean";
-  room.updatedAt = new Date().toISOString();
-  saveData();
-  alert(`${number} numaralı oda müdür tarafından onaylandı ve satışa hazır duruma getirildi.`);
-}
-
-function changeRoomStatusPrompt(number) {
-  const room = data.rooms.find(r => r.number === number);
-  if (!room) return;
-  const choices = Object.entries(STATUS).map(([k, v]) => `- ${v.label}`).join("\n");
-  const ans = prompt(`Oda için yeni durumu girin:\n${choices}`, STATUS[room.status].label);
-  if (!ans) return;
-  const found = Object.entries(STATUS).find(([k, v]) => v.label.toLowerCase() === ans.trim().toLowerCase());
-  if (!found) {
-    alert("Geçersiz durum adı yazdınız.");
-    return;
-  }
-  room.status = found[0];
-  room.updatedAt = new Date().toISOString();
-  saveData();
-}
-
-function assignStaff(number) {
-  const room = data.rooms.find(r => r.number === number);
-  if (!room) return;
-  const staff = prompt(`${number} numaralı oda için görevli personel adı:`, room.staff);
-  if (staff === null) return;
-  room.staff = staff.trim();
-  room.updatedAt = new Date().toISOString();
-  saveData();
-}
-
-function addRoom() {
-  const number = prompt("Yeni oda veya apart numarası:");
-  if (!number) return;
-  const cleaned = number.trim();
-  if (data.rooms.some(r => r.number === cleaned)) {
-    alert("Bu oda numarası zaten var!");
-    return;
-  }
-  data.rooms.push({
-    number: cleaned,
-    type: roomType(cleaned),
-    status: "dirty",
-    staff: "",
-    updatedAt: new Date().toISOString()
-  });
-  saveData();
-}
-
-// 2. KAT GÖREVLİSİ EKRANI FONKSİYONLARI
-function renderStaffPanel() {
-  const select = document.getElementById("staffRoomSelect");
-  const currentVal = select.value;
-  select.innerHTML = roomOptions(currentVal);
-  if (currentVal) loadRoomTaskDetails();
-}
-
-function loadRoomTaskDetails() {
-  const roomNo = document.getElementById("staffRoomSelect").value;
-  const panel = document.getElementById("staffTaskPanel");
-  if (!roomNo) {
-    panel.style.display = "none";
-    return;
-  }
-  panel.style.display = "block";
-  const room = data.rooms.find(r => r.number === roomNo);
-  if (!room) return;
-
-  document.getElementById("selectedRoomTitle").textContent = `${room.number} Nolu Oda (${room.type}) - Durum: ${STATUS[room.status].label}`;
-  document.getElementById("staffTimeInfo").textContent = `Başlangıç: ${dateText(room.startTime)} | Bitiş: ${dateText(room.finishTime)}`;
-  
-  // Checkboxları doldur
-  const boxes = document.querySelectorAll(".chk-item");
-  boxes.forEach(box => {
-    box.checked = room.checklist && room.checklist[box.value] === true;
-  });
-}
-
-function startCleaning() {
-  const roomNo = document.getElementById("staffRoomSelect").value;
-  const staffName = document.getElementById("activeStaffName").value.trim();
-  if (!roomNo) return alert("Lütfen oda seçin.");
-  if (!staffName) return alert("Lütfen önce kendi personel adınızı yazın.");
-
-  const room = data.rooms.find(r => r.number === roomNo);
-  if (!room) return;
-
-  room.staff = staffName;
-  room.status = "progress";
-  room.startTime = new Date().toISOString();
-  room.updatedAt = new Date().toISOString();
-  saveData();
-  loadRoomTaskDetails();
-  alert(`${roomNo} nolu oda için temizlik başlatıldı.`);
-}
-
-function finishCleaning() {
-  const roomNo = document.getElementById("staffRoomSelect").value;
-  if (!roomNo) return;
-  const room = data.rooms.find(r => r.number === roomNo);
-  if (!room) return;
-
-  // Checkbox durumlarını kaydet
-  room.checklist = {};
-  document.querySelectorAll(".chk-item").forEach(box => {
-    room.checklist[box.value] = box.checked;
-  });
-
-  room.status = "inspect"; // Kontrol bekliyor durumuna al
-  room.finishTime = new Date().toISOString();
-  room.updatedAt = new Date().toISOString();
-  saveData();
-  loadRoomTaskDetails();
-  alert(`${roomNo} nolu oda temizliği tamamlandı ve müdür onayına (kontrol bekliyor) gönderildi.`);
-}
-
-function reportIssueFromStaff() {
-  const roomNo = document.getElementById("staffRoomSelect").value;
-  const note = document.getElementById("staffNoteInput").value.trim();
-  const staffName = document.getElementById("activeStaffName").value.trim() || "Kat Personeli";
-  if (!roomNo || !note) return alert("Lütfen oda seçin ve bildirim notu yazın.");
-
-  data.issues.unshift({
-    id: Date.now().toString(36),
-    room: roomNo,
-    type: "Personel Bildirimi / Eksik",
-    description: note,
-    reporter: staffName,
-    status: "open",
-    createdAt: new Date().toISOString()
-  });
-
-  document.getElementById("staffNoteInput").value = "";
-  saveData();
-  alert("Arıza/Eksik bildirimi teknik ekibe ve yönetime iletildi.");
-}
-
-// 3. ARIZA BİLDİRİMLERİ EKRANI
-renderIssues();
-function renderIssues() {
-  const tbody = document.getElementById("issueRows");
-  tbody.innerHTML = data.issues.length ? data.issues.map(i => `
-    <tr>
-      <td>${dateText(i.createdAt)}</td>
-      <td><strong>${escapeHTML(i.room)}</strong></td>
-      <td>${escapeHTML(i.type)}</td>
-      <td>${escapeHTML(i.description)}</td>
-      <td>${escapeHTML(i.reporter)}</td>
-      <td>
-        ${i.status === "open" ? `<button class="btn-green" onclick="resolveIssue('${i.id}')">Çözüldü İşaretle</button>` : `<span style="color:var(--muted)">Çözüldü</span>`}
-      </td>
-    </tr>
-  `).join("") : `<tr><td colspan="6" class="empty">Açık arıza veya eksik bildirimi bulunmuyor.</td></tr>`;
-}
-
-function resolveIssue(id) {
-  const issue = data.issues.find(i => i.id === id);
-  if (issue) {
-    issue.status = "resolved";
-    saveData();
-  }
-}
-
-// 4. GÜNLÜK RAPOR VE İŞ YÜKÜ EKRANI
-function renderReports() {
-  const tbody = document.getElementById("reportRows");
-  tbody.innerHTML = data.rooms.map(r => `
-    <tr>
-      <td><strong>${escapeHTML(r.number)}</strong></td>
-      <td>${escapeHTML(r.type)}</td>
-      <td><span class="status ${STATUS[r.status].cls}">${STATUS[r.status].label}</span></td>
-      <td>${escapeHTML(r.staff || "Atanmadı")}</td>
-      <td>${dateText(r.updatedAt)}</td>
-      <td>
-        <button class="small-btn" onclick="changeRoomStatusPrompt('${escapeHTML(r.number)}')">Değiştir</button>
-      </td>
-    </tr>
-  `).join("");
-}
-
-// TAB YÖNETİMİ
-document.querySelectorAll(".tab").forEach(tab => {
-  tab.addEventListener("click", () => {
-    document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
-    document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
-    tab.classList.add("active");
-    document.getElementById("view-" + tab.dataset.view).classList.add("active");
-    if (tab.dataset.view === "staff") renderStaffPanel();
-    if (tab.dataset.view === "reports") renderReports();
-    if (tab.dataset.view === "issues") renderIssues();
-  });
-});
-
-function renderAll() {
-  renderStats();
-  renderRooms();
-  renderIssues();
-  if (document.getElementById("view-staff").classList.contains("active")) renderStaffPanel();
-  if (document.getElementById("view-reports").classList.contains("active")) renderReports();
-}
-
-function exportCSV() {
-  const rows = [
-    ["Oda No", "Oda Tipi", "Durum", "Görevli", "Son Güncelleme"],
-    ...data.rooms.map(r => [r.number, r.type, STATUS[r.status].label, r.staff, dateText(r.updatedAt)])
-  ];
-  const csv = "\uFEFF" + rows.map(r => r.map(c => `"${c}"`).join(";")).join("\r\n");
-  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "agaoglu-housekeeping-rapor.csv";
-  a.click();
-  a.remove();
-}
-
-function backupData() {
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "agaoglu-yedek-" + new Date().toISOString().slice(0,10) + ".json";
-  a.click();
-  a.remove();
-}
-
-// Başlatıcı
-renderAll();
-</script>
-</body>
-</html>
+  <!-- 5. GÜNLÜK RAPOR -->

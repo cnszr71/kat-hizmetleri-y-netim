@@ -435,3 +435,168 @@ function loadRoomTaskDetails() {
   }
   panel.style.display = "block";
   const room = data.rooms.find(r => r.number === roomNo);
+  if (!room) return;
+
+  document.getElementById("selectedRoomTitle").textContent = `${room.number} Nolu Oda (${room.type}) - Durum: ${STATUS[room.status].label}`;
+  document.getElementById("staffTimeInfo").textContent = `Başlangıç: ${dateText(room.startTime)} | Bitiş: ${dateText(room.finishTime)}`;
+  
+  // Checkboxları doldur
+  const boxes = document.querySelectorAll(".chk-item");
+  boxes.forEach(box => {
+    box.checked = room.checklist && room.checklist[box.value] === true;
+  });
+}
+
+function startCleaning() {
+  const roomNo = document.getElementById("staffRoomSelect").value;
+  const staffName = document.getElementById("activeStaffName").value.trim();
+  if (!roomNo) return alert("Lütfen oda seçin.");
+  if (!staffName) return alert("Lütfen önce kendi personel adınızı yazın.");
+
+  const room = data.rooms.find(r => r.number === roomNo);
+  if (!room) return;
+
+  room.staff = staffName;
+  room.status = "progress";
+  room.startTime = new Date().toISOString();
+  room.updatedAt = new Date().toISOString();
+  saveData();
+  loadRoomTaskDetails();
+  alert(`${roomNo} nolu oda için temizlik başlatıldı.`);
+}
+
+function finishCleaning() {
+  const roomNo = document.getElementById("staffRoomSelect").value;
+  if (!roomNo) return;
+  const room = data.rooms.find(r => r.number === roomNo);
+  if (!room) return;
+
+  // Checkbox durumlarını kaydet
+  room.checklist = {};
+  document.querySelectorAll(".chk-item").forEach(box => {
+    room.checklist[box.value] = box.checked;
+  });
+
+  room.status = "inspect"; // Kontrol bekliyor durumuna al
+  room.finishTime = new Date().toISOString();
+  room.updatedAt = new Date().toISOString();
+  saveData();
+  loadRoomTaskDetails();
+  alert(`${roomNo} nolu oda temizliği tamamlandı ve müdür onayına (kontrol bekliyor) gönderildi.`);
+}
+
+function reportIssueFromStaff() {
+  const roomNo = document.getElementById("staffRoomSelect").value;
+  const note = document.getElementById("staffNoteInput").value.trim();
+  const staffName = document.getElementById("activeStaffName").value.trim() || "Kat Personeli";
+  if (!roomNo || !note) return alert("Lütfen oda seçin ve bildirim notu yazın.");
+
+  data.issues.unshift({
+    id: Date.now().toString(36),
+    room: roomNo,
+    type: "Personel Bildirimi / Eksik",
+    description: note,
+    reporter: staffName,
+    status: "open",
+    createdAt: new Date().toISOString()
+  });
+
+  document.getElementById("staffNoteInput").value = "";
+  saveData();
+  alert("Arıza/Eksik bildirimi teknik ekibe ve yönetime iletildi.");
+}
+
+// 3. ARIZA BİLDİRİMLERİ EKRANI
+renderIssues();
+function renderIssues() {
+  const tbody = document.getElementById("issueRows");
+  tbody.innerHTML = data.issues.length ? data.issues.map(i => `
+    <tr>
+      <td>${dateText(i.createdAt)}</td>
+      <td><strong>${escapeHTML(i.room)}</strong></td>
+      <td>${escapeHTML(i.type)}</td>
+      <td>${escapeHTML(i.description)}</td>
+      <td>${escapeHTML(i.reporter)}</td>
+      <td>
+        ${i.status === "open" ? `<button class="btn-green" onclick="resolveIssue('${i.id}')">Çözüldü İşaretle</button>` : `<span style="color:var(--muted)">Çözüldü</span>`}
+      </td>
+    </tr>
+  `).join("") : `<tr><td colspan="6" class="empty">Açık arıza veya eksik bildirimi bulunmuyor.</td></tr>`;
+}
+
+function resolveIssue(id) {
+  const issue = data.issues.find(i => i.id === id);
+  if (issue) {
+    issue.status = "resolved";
+    saveData();
+  }
+}
+
+// 4. GÜNLÜK RAPOR VE İŞ YÜKÜ EKRANI
+function renderReports() {
+  const tbody = document.getElementById("reportRows");
+  tbody.innerHTML = data.rooms.map(r => `
+    <tr>
+      <td><strong>${escapeHTML(r.number)}</strong></td>
+      <td>${escapeHTML(r.type)}</td>
+      <td><span class="status ${STATUS[r.status].cls}">${STATUS[r.status].label}</span></td>
+      <td>${escapeHTML(r.staff || "Atanmadı")}</td>
+      <td>${dateText(r.updatedAt)}</td>
+      <td>
+        <button class="small-btn" onclick="changeRoomStatusPrompt('${escapeHTML(r.number)}')">Değiştir</button>
+      </td>
+    </tr>
+  `).join("");
+}
+
+// TAB YÖNETİMİ
+document.querySelectorAll(".tab").forEach(tab => {
+  tab.addEventListener("click", () => {
+    document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+    document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
+    tab.classList.add("active");
+    document.getElementById("view-" + tab.dataset.view).classList.add("active");
+    if (tab.dataset.view === "staff") renderStaffPanel();
+    if (tab.dataset.view === "reports") renderReports();
+    if (tab.dataset.view === "issues") renderIssues();
+  });
+});
+
+function renderAll() {
+  renderStats();
+  renderRooms();
+  renderIssues();
+  if (document.getElementById("view-staff").classList.contains("active")) renderStaffPanel();
+  if (document.getElementById("view-reports").classList.contains("active")) renderReports();
+}
+
+function exportCSV() {
+  const rows = [
+    ["Oda No", "Oda Tipi", "Durum", "Görevli", "Son Güncelleme"],
+    ...data.rooms.map(r => [r.number, r.type, STATUS[r.status].label, r.staff, dateText(r.updatedAt)])
+  ];
+  const csv = "\uFEFF" + rows.map(r => r.map(c => `"${c}"`).join(";")).join("\r\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "agaoglu-housekeeping-rapor.csv";
+  a.click();
+  a.remove();
+}
+
+function backupData() {
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "agaoglu-yedek-" + new Date().toISOString().slice(0,10) + ".json";
+  a.click();
+  a.remove();
+}
+
+// Başlatıcı
+renderAll();
+</script>
+</body>
+</html>

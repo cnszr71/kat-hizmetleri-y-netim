@@ -76,7 +76,6 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--green2);
 }
 .room-card:hover{transform:translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,0.07)}
 
-/* Kart Durum Kenar Çizgisi */
 .room-card::before{content:""; position:absolute; left:0; top:0; bottom:0; width:5px;}
 .room-card.s-dirty::before{background:#d97706;}
 .room-card.s-progress::before{background:#2563eb;}
@@ -96,8 +95,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--green2);
 .badge-maintenance{background:#fef2f2;color:#991b1b}
 
 .room-content-box{background:#f8faf9; border-radius:10px; padding:10px 12px; margin-bottom:14px; border:1px solid #edf2ef;}
-.room-task-text{font-size:12px; color:var(--text); font-weight:600; margin-bottom:4px; display:flex; align-items:center; gap:5px;}
-.room-staff-text{font-size:11px; color:var(--muted); display:flex; align-items:center; gap:5px;}
+.room-task-text{font-size:12px; color:var(--text); font-weight:600; display:flex; align-items:center; gap:5px;}
 
 .room-footer-actions{display:flex; flex-direction:column; gap:8px;}
 .status-select{font-size:11px; padding:8px 10px; border-radius:8px; font-weight:600; background:#fff; border:1px solid var(--border); cursor:pointer;}
@@ -176,7 +174,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:20px;margin-t
         <button class="btn-green" onclick="addRoom()">＋ Yeni Oda Ekle</button>
       </div>
       <div class="filters">
-        <input id="roomSearch" placeholder="Oda no veya personel ara…" oninput="renderRooms()">
+        <input id="roomSearch" placeholder="Oda no ara…" oninput="renderRooms()">
         <select id="floorFilter" onchange="renderRooms()">
           <option value="">Tüm Katlar</option>
           <option value="1">1. Kat</option><option value="2">2. Kat</option>
@@ -199,12 +197,12 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:20px;margin-t
   <section id="view-reception" class="view">
     <div class="panel">
       <div class="panel-head">
-        <div><h2>Resepsiyon Sabah Oda Durumu & Görev Tanımlama</h2><p>Sabah odaların çıkış durumlarını belirleyin ve kat görevlisine görev atayın.</p></div>
+        <div><h2>Resepsiyon Sabah Oda Durumu & Görev Tanımlama</h2><p>Sabah odaların durumunu (Örn: Çıkış / Kirli) belirleyin. Kaydettiğiniz an kat görevlisi ekranına otomatik düşer.</p></div>
       </div>
       <div class="table-wrap">
         <table>
           <thead>
-            <tr><th>Oda No</th><th>Tip</th><th>Mevcut Statü</th><th>Görev Tanımı / Talimat</th><th>Görevli Personel</th><th>İşlem</th></tr>
+            <tr><th>Oda No</th><th>Tip</th><th>Durum Seçin</th><th>Görev / Talimat Notu</th><th>İşlem</th></tr>
           </thead>
           <tbody id="receptionRows"></tbody>
         </table>
@@ -216,15 +214,11 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:20px;margin-t
   <section id="view-staff" class="view">
     <div class="panel">
       <div class="panel-head">
-        <div><h2>Kat Görevlisi Çalışma Paneli</h2><p>Size atanmış odaları seçin, temizliği başlatıp checklist adımlarını tamamlayın.</p></div>
+        <div><h2>Kat Görevlisi Çalışma Paneli</h2><p>Temizlik bekleyen odaları seçin, temizliği başlatıp checklist adımlarını tamamlayın.</p></div>
       </div>
       <div class="form-grid">
-        <div class="field">
-          <label for="activeStaffName">Personel Adınız</label>
-          <input id="activeStaffName" placeholder="Örn: Fatma Hanım" oninput="renderStaffPanel()">
-        </div>
-        <div class="field">
-          <label for="staffRoomSelect">İşlem Yapılacak Oda</label>
+        <div class="field full">
+          <label for="staffRoomSelect">Temizlik Bekleyen Odalar (Otomatik Havuz)</label>
           <select id="staffRoomSelect" onchange="loadRoomTaskDetails()"></select>
         </div>
       </div>
@@ -283,10 +277,10 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:20px;margin-t
   <!-- 5. GÜNLÜK RAPOR -->
   <section id="view-reports" class="view">
     <div class="panel">
-      <div class="panel-head"><div><h2>Günlük Operasyon Raporu</h2><p>Müdür için anlık oda durumu ve görevli özeti.</p></div></div>
+      <div class="panel-head"><div><h2>Günlük Operasyon Raporu</h2><p>Müdür için anlık oda durumu ve görev özeti.</p></div></div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Oda No</th><th>Tip</th><th>Statü</th><th>Görev Tanımı</th><th>Atanan Personel</th><th>Son Güncelleme</th></tr></thead>
+          <thead><tr><th>Oda No</th><th>Tip</th><th>Statü</th><th>Görev / Talimat</th><th>Son Güncelleme</th></tr></thead>
           <tbody id="reportRows"></tbody>
         </table>
       </div>
@@ -299,7 +293,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:20px;margin-t
 <script>
 "use strict";
 
-const STORAGE_KEY = "agaoglu-housekeeping-v4";
+const STORAGE_KEY = "agaoglu-housekeeping-v5";
 
 function roomType(number) {
   const n = String(number).trim();
@@ -320,7 +314,6 @@ const INITIAL_ROOMS = ROOM_NUMBERS.map(number => ({
   type: roomType(number),
   status: "dirty", 
   taskDesc: "Günlük Standart Temizlik",
-  staff: "",
   startTime: null,
   finishTime: null,
   checklist: {},
@@ -404,10 +397,15 @@ function roomFloor(number) {
   return match ? match[1] : "other";
 }
 
-function roomOptions(selected = "") {
-  const rooms = [...data.rooms].sort((a,b) => a.number.localeCompare(b.number, "tr", {numeric:true}));
-  return `<option value="">Oda seçin</option>` +
-    rooms.map(r => `<option value="${escapeHTML(r.number)}" ${r.number===selected?"selected":""}>${escapeHTML(r.number)} · ${escapeHTML(r.type)} (${STATUS[r.status].label})</option>`).join("");
+// Kat görevlisi ekranı için sadece temizlik bekleyen veya işlemdeki odaları otomatik havuzda göster
+function staffRoomOptions(selected = "") {
+  const activeRooms = data.rooms.filter(r => r.status === "dirty" || r.status === "progress");
+  const sorted = [...activeRooms].sort((a,b) => a.number.localeCompare(b.number, "tr", {numeric:true}));
+  
+  if (!sorted.length) return `<option value="">Temizlik bekleyen oda kalmadı</option>`;
+  
+  return `<option value="">İşlem yapılacak oda seçin (${sorted.length} oda)</option>` +
+    sorted.map(r => `<option value="${escapeHTML(r.number)}" ${r.number===selected?"selected":""}>${escapeHTML(r.number)} · ${escapeHTML(r.type)} (${STATUS[r.status].label})</option>`).join("");
 }
 
 function renderStats() {
@@ -418,7 +416,7 @@ function renderStats() {
   document.getElementById("stClean").textContent = data.rooms.filter(r => r.status === "clean").length;
 }
 
-// 1. MÜDÜR EKRANI (ESTETİK KARTLAR & SEÇEREK DURUM DEĞİŞTİRME)
+// 1. MÜDÜR EKRANI
 function renderRooms() {
   const search = document.getElementById("roomSearch").value.trim().toLocaleLowerCase("tr");
   const floor = document.getElementById("floorFilter").value;
@@ -427,7 +425,7 @@ function renderRooms() {
   const rooms = [...data.rooms]
     .sort((a,b) => a.number.localeCompare(b.number, "tr", {numeric:true}))
     .filter(r => {
-      const matchesSearch = !search || r.number.toLocaleLowerCase("tr").includes(search) || r.staff.toLocaleLowerCase("tr").includes(search);
+      const matchesSearch = !search || r.number.toLocaleLowerCase("tr").includes(search);
       const matchesFloor = !floor || roomFloor(r.number) === floor;
       const matchesStatus = !status || r.status === status;
       return matchesSearch && matchesFloor && matchesStatus;
@@ -435,8 +433,6 @@ function renderRooms() {
 
   document.getElementById("roomGrid").innerHTML = rooms.length ? rooms.map(r => {
     const s = STATUS[r.status] || STATUS.dirty;
-    
-    // Açılır durum seçenekleri HTML'i
     const statusOptionsHtml = Object.entries(STATUS).map(([key, val]) => 
       `<option value="${key}" ${r.status === key ? 'selected' : ''}>${val.label}</option>`
     ).join("");
@@ -453,7 +449,6 @@ function renderRooms() {
         
         <div class="room-content-box">
           <div class="room-task-text">📋 ${escapeHTML(r.taskDesc || "Görev yok")}</div>
-          <div class="room-staff-text">👤 ${r.staff ? escapeHTML(r.staff) : "Personel atanmadı"}</div>
         </div>
       </div>
 
@@ -461,10 +456,7 @@ function renderRooms() {
         <select class="status-select" onchange="updateRoomStatusFromCard('${escapeHTML(r.number)}', this.value)">
           ${statusOptionsHtml}
         </select>
-        <div style="display:flex; gap:6px;">
-          ${r.status === 'inspect' ? `<button class="btn-green" style="flex:1; padding:7px; font-size:11px;" onclick="managerApprove('${escapeHTML(r.number)}')">✓ Onayla (Satışa Aç)</button>` : ``}
-          <button class="btn-outline" style="flex:1; padding:7px; font-size:11px;" onclick="assignStaff('${escapeHTML(r.number)}')">Personel Ata</button>
-        </div>
+        ${r.status === 'inspect' ? `<button class="btn-green" style="width:100%; padding:7px; font-size:11px;" onclick="managerApprove('${escapeHTML(r.number)}')">✓ Onayla (Satışa Aç)</button>` : ``}
       </div>
     </article>`;
   }).join("") : `<div class="empty">Filtrelere uygun oda bulunamadı.</div>`;
@@ -486,16 +478,6 @@ function managerApprove(number) {
   saveData();
 }
 
-function assignStaff(number) {
-  const room = data.rooms.find(r => r.number === number);
-  if (!room) return;
-  const staff = prompt(`${number} numaralı oda için personel adı:`, room.staff);
-  if (staff === null) return;
-  room.staff = staff.trim();
-  room.updatedAt = new Date().toISOString();
-  saveData();
-}
-
 function addRoom() {
   const number = prompt("Yeni oda numarası:");
   if (!number) return;
@@ -503,7 +485,7 @@ function addRoom() {
   if (data.rooms.some(r => r.number === cleaned)) { alert("Bu oda zaten var!"); return; }
   data.rooms.push({
     number: cleaned, type: roomType(cleaned), status: "dirty",
-    taskDesc: "Günlük Temizlik", staff: "", updatedAt: new Date().toISOString()
+    taskDesc: "Günlük Standart Temizlik", updatedAt: new Date().toISOString()
   });
   saveData();
 }
@@ -511,38 +493,51 @@ function addRoom() {
 // 2. RESEPSİYON SABAH GİRİŞİ
 function renderReception() {
   const tbody = document.getElementById("receptionRows");
-  tbody.innerHTML = data.rooms.map(r => `
-    <tr>
+  tbody.innerHTML = data.rooms.map(r => {
+    const statusOptionsHtml = Object.entries(STATUS).map(([key, val]) => 
+      `<option value="${key}" ${r.status === key ? 'selected' : ''}>${val.label}</option>`
+    ).join("");
+
+    return `<tr>
       <td><strong>${escapeHTML(r.number)}</strong></td>
       <td>${escapeHTML(r.type)}</td>
-      <td><span class="status-badge ${STATUS[r.status].badge}">${STATUS[r.status].label}</span></td>
-      <td><input type="text" id="rec-task-${r.number}" value="${escapeHTML(r.taskDesc)}" style="font-size:12px; padding:8px;" placeholder="Görev talimatı..."></td>
-      <td><input type="text" id="rec-staff-${r.number}" value="${escapeHTML(r.staff)}" style="font-size:12px; padding:8px;" placeholder="Personel"></td>
       <td>
-        <button class="btn-green" style="padding:8px 12px; font-size:11px;" onclick="saveReceptionTask('${r.number}')">Kaydet</button>
+        <select id="rec-status-${r.number}" style="font-size:12px; padding:8px;">
+          ${statusOptionsHtml}
+        </select>
       </td>
-    </tr>
-  `).join("");
+      <td><input type="text" id="rec-task-${r.number}" value="${escapeHTML(r.taskDesc)}" style="font-size:12px; padding:8px;" placeholder="Görev talimatı..."></td>
+      <td>
+        <button class="btn-green" style="padding:8px 12px; font-size:11px;" onclick="saveReceptionTask('${r.number}')">Kaydet & Gönder</button>
+      </td>
+    </tr>`;
+  }).join("");
 }
 
 function saveReceptionTask(number) {
   const room = data.rooms.find(r => r.number === number);
   if (!room) return;
+  const newStatus = document.getElementById(`rec-status-${number}`).value;
+  room.status = newStatus;
   room.taskDesc = document.getElementById(`rec-task-${number}`).value.trim() || "Günlük Temizlik";
-  room.staff = document.getElementById(`rec-staff-${number}`).value.trim();
-  room.status = "dirty";
   room.updatedAt = new Date().toISOString();
   saveData();
-  alert(`${number} nolu oda görevi güncellendi.`);
+  alert(`${number} nolu oda durumu ve talimatı kat görevlileri ekranına iletildi.`);
   renderReception();
 }
 
-// 3. KAT GÖREVLİSİ EKRANI
+// 3. KAT GÖREVLİSİ EKRANI (OTOMATİK HAVUZ)
 function renderStaffPanel() {
   const select = document.getElementById("staffRoomSelect");
   const currentVal = select.value;
-  select.innerHTML = roomOptions(currentVal);
-  if (currentVal) loadRoomTaskDetails();
+  select.innerHTML = staffRoomOptions(currentVal);
+  if (currentVal && !data.rooms.find(r => r.number === currentVal && (r.status === 'dirty' || r.status === 'progress'))) {
+    document.getElementById("staffTaskPanel").style.display = "none";
+  } else if (currentVal) {
+    loadRoomTaskDetails();
+  } else {
+    document.getElementById("staffTaskPanel").style.display = "none";
+  }
 }
 
 function loadRoomTaskDetails() {
@@ -554,7 +549,7 @@ function loadRoomTaskDetails() {
   if (!room) return;
 
   document.getElementById("selectedRoomTitle").textContent = `${room.number} Nolu Oda (${room.type})`;
-  document.getElementById("staffTaskDesc").textContent = `Talimat: ${room.taskDesc} | Statü: ${STATUS[room.status].label}`;
+  document.getElementById("staffTaskDesc").textContent = `Resepsiyon Talimatı: ${room.taskDesc} | Statü: ${STATUS[room.status].label}`;
   document.getElementById("staffTimeInfo").textContent = `Başlangıç: ${dateText(room.startTime)} | Bitiş: ${dateText(room.finishTime)}`;
   
   const boxes = document.querySelectorAll(".chk-item");
@@ -565,14 +560,11 @@ function loadRoomTaskDetails() {
 
 function startCleaning() {
   const roomNo = document.getElementById("staffRoomSelect").value;
-  const staffName = document.getElementById("activeStaffName").value.trim();
   if (!roomNo) return alert("Oda seçin.");
-  if (!staffName) return alert("Personel adınızı yazın.");
 
   const room = data.rooms.find(r => r.number === roomNo);
   if (!room) return;
 
-  room.staff = staffName;
   room.status = "progress";
   room.startTime = new Date().toISOString();
   room.updatedAt = new Date().toISOString();
@@ -591,18 +583,17 @@ function finishCleaning() {
     room.checklist[box.value] = box.checked;
   });
 
-  room.status = "inspect"; 
+  room.status = "inspect"; // Müdür onayına gönder
   room.finishTime = new Date().toISOString();
   room.updatedAt = new Date().toISOString();
   saveData();
-  loadRoomTaskDetails();
+  renderStaffPanel();
   alert(`${roomNo} nolu oda temizliği tamamlandı, müdür onayına gönderildi.`);
 }
 
 function reportIssueFromStaff(priority) {
   const roomNo = document.getElementById("staffRoomSelect").value;
   const note = document.getElementById("staffNoteInput").value.trim();
-  const staffName = document.getElementById("activeStaffName").value.trim() || "Kat Personeli";
   if (!roomNo || !note) return alert("Oda seçip açıklama yazın.");
 
   data.issues.unshift({
@@ -611,7 +602,7 @@ function reportIssueFromStaff(priority) {
     priority: priority,
     type: priority === "Acil" ? "🚨 ACİL ARIZA" : "Normal Bildirim",
     description: note,
-    reporter: staffName,
+    reporter: "Kat Personeli",
     status: "open",
     createdAt: new Date().toISOString()
   });
@@ -662,7 +653,6 @@ function renderReports() {
       <td>${escapeHTML(r.type)}</td>
       <td><span class="status-badge ${STATUS[r.status].badge}">${STATUS[r.status].label}</span></td>
       <td>${escapeHTML(r.taskDesc)}</td>
-      <td>${escapeHTML(r.staff || "Atanmadı")}</td>
       <td>${dateText(r.updatedAt)}</td>
     </tr>
   `).join("");
@@ -694,8 +684,8 @@ function renderAll() {
 
 function exportCSV() {
   const rows = [
-    ["Oda No", "Oda Tipi", "Durum", "Görev Tanımı", "Görevli", "Son Güncelleme"],
-    ...data.rooms.map(r => [r.number, r.type, STATUS[r.status].label, r.taskDesc, r.staff, dateText(r.updatedAt)])
+    ["Oda No", "Oda Tipi", "Durum", "Görev Talimatı", "Son Güncelleme"],
+    ...data.rooms.map(r => [r.number, r.type, STATUS[r.status].label, r.taskDesc, dateText(r.updatedAt)])
   ];
   const csv = "\uFEFF" + rows.map(r => r.map(c => `"${c}"`).join(";")).join("\r\n");
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
